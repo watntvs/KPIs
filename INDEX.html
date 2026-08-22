@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>📘 داشبورد شاخص‌های معاونت مالی</title>
+  <style>
+    body {
+      font-family: Vazirmatn, sans-serif;
+      background-color: #f9f9f9;
+      direction: rtl;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #007f00;
+      margin-bottom: 30px;
+    }
+    details {
+      margin-bottom: 10px;
+    }
+    summary {
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    ul {
+      list-style: none;
+      padding-right: 20px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .subgroup-title {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .domain-icon {
+      font-size: 20px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      width: 80%;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      font-family: Vazirmatn, sans-serif;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .close-button {
+      float: left;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #backButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007f00;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .formula-box {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-right: 4px solid #007f00;
+      border-radius: 4px;
+    }
+    .example-box {
+      background-color: #fff8e1;
+      padding: 12px;
+      border-left: 4px solid #ff9800;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      text-align: right;
+      padding: 8px;
+      border-bottom: 1px solid #ccc;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📘 شاخص‌های معاونت مالی</h1>
+<div id="dashboard"></div>
+
+<div id="indicatorModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button" onclick="closeModal()">✖</span>
+    <div id="indicatorContent"></div>
+    <button id="backButton" onclick="closeModal()">🔙 بازگشت</button>
+  </div>
+</div>
+
+<script>
+  let icons = {};
+
+  fetch("icons.json")
+    .then(res => res.json())
+    .then(data => {
+      icons = data;
+      loadDomains();
+    });
+
+  function loadDomains() {
+    fetch("domains.json")
+      .then(res => res.json())
+      .then(domains => {
+        const container = document.getElementById("dashboard");
+
+        domains.forEach(domain => {
+          const details = document.createElement("details");
+          const summary = document.createElement("summary");
+
+          const icon = icons[domain.domainTitle] || "📁";
+          summary.innerHTML = `<span class="domain-icon">${icon}</span> ${domain.domainNumber}. ${domain.domainTitle}`;
+          details.appendChild(summary);
+
+          summary.addEventListener("click", () => {
+            // بستن سایر دامین‌ها
+            document.querySelectorAll("#dashboard details").forEach(d => {
+              if (d !== details) d.removeAttribute("open");
+            });
+
+            // بارگذاری محتوا فقط یک‌بار
+            if (!details.dataset.loaded) {
+              fetch(domain.file)
+                .then(res => res.json())
+                .then(data => {
+                  data.subgroups.forEach(sub => {
+                    const subgroupTitle = document.createElement("div");
+                    subgroupTitle.className = "subgroup-title";
+                    subgroupTitle.textContent = sub.title;
+                    subgroupTitle.style.color = sub.color || "#007f00";
+                    details.appendChild(subgroupTitle);
+
+                    sub.categories.forEach(cat => {
+                      const catItem = document.createElement("li");
+                      catItem.textContent = cat.title;
+
+                      const itemList = document.createElement("ul");
+                      cat.items.forEach(item => {
+                        const li = document.createElement("li");
+                        const a = document.createElement("a");
+                        a.href = "#";
+                        a.textContent = item.title;
+                        a.addEventListener("click", () => showIndicator(item));
+                        li.appendChild(a);
+                        itemList.appendChild(li);
+                      });
+
+                      const catWrapper = document.createElement("ul");
+                      catWrapper.appendChild(catItem);
+                      catWrapper.appendChild(itemList);
+                      details.appendChild(catWrapper);
+                    });
+                  });
+                  details.dataset.loaded = "true";
+                });
+            }
+          });
+
+          container.appendChild(details);
+        });
+      });
+  }
+
+  function showIndicator(item) {
+    const container = document.getElementById("indicatorContent");
+    container.innerHTML = `
+      <h2>📊 ${item.title}</h2>
+      <p><strong>🔹 تعریف:</strong> ${item.definition || item.description || "توضیحی ثبت نشده است."}</p>
+      <hr>
+      <p><strong>📐 فرمول محاسبه:</strong></p>
+      <p class="formula-box">${item.formula || "نامشخص"}</p>
+      <hr>
+      <p><strong>📦 اجزای ورودی:</strong></p>
+      <ul>${(item.inputs || []).map(i => `<li>${i}</li>`).join("")}</ul>
+      <hr>
+      <p><strong>📊 واحد اندازه‌گیری:</strong> ${item.unit || "نامشخص"}</p>
+      <hr>
+      ${item.interpretation ? `
+        <p><strong>🎯 تفسیر عدد شاخص:</strong></p>
+        <table>
+          <tr><th>مقدار</th><th>تفسیر</th></tr>
+          ${item.interpretation.map(row => `<tr><td>${row.range}</td><td>${row.meaning}</td></tr>`).join("")}
+        </table>
+        <hr>
+      ` : ""}
+      ${item.example ? `
+        <p><strong>📈 مثال عددی:</strong></p>
+        <div class="example-box">
+          ${Object.entries(item.example.values).map(([k,v]) => `• ${k} = ${v}<br>`).join("")}
+          <br><br>${item.example.calculation}
+        </div>
+        <hr>
+      ` : ""}
+      <p><strong>📂 روش استخراج داده‌ها:</strong></p>
+      <ul>${(item.source || []).map(s => `<li>${s}</li>`).join("")}</ul>
+    `;
+    document.getElementById("indicatorModal").style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("indicatorModal").style.display = "none";
+  }
+</script>
+
+</body>
+</html>
