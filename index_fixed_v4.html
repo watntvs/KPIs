@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>داشبورد مدیریتی پیشران</title>
+  <style>
+    :root {
+      --bg: #f5f8fc;
+      --panel: #ffffff;
+      --panel-2: #fbfcfe;
+      --text: #17324d;
+      --muted: #6b7b8e;
+      --line: #dde5ef;
+      --primary: #2563eb;
+      --primary-2: #0f766e;
+      --accent: #7c3aed;
+      --danger: #b42318;
+      --shadow: 0 12px 30px rgba(15, 23, 42, .08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    @font-face {
+      font-family: "B Titr Local";
+      src: local("B Titr"), local("BTitr");
+      font-display: swap;
+    }
+    .panel-title, .section-title, .detail-name, .brand {
+      font-family: "B Titr Local", "B Titr", Tahoma, Arial, sans-serif;
+    }
+    .detail-section {
+      border: 1px solid color-mix(in srgb, var(--section-line, var(--line)) 82%, white);
+      border-inline-start: 3px solid var(--section-accent, #cbd5e1);
+      background: color-mix(in srgb, var(--section-bg, #fff) 94%, white);
+    }
+    .detail-section .section-title { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--section-line, var(--line)) 70%, white); }
+    .section-icon { width: 1.35em; display: inline-grid; place-items: center; text-align: center; margin-inline-end: 7px; color: var(--section-accent, var(--primary)); font-size: 1.05em; vertical-align: middle; }
+    .section-meta { color: var(--muted); font-size: 12px; font-family: Tahoma, Arial, sans-serif; }
+    .section-overview { --section-bg: #f7fbff; --section-line: #dbeafe; --section-accent: #60a5fa; }
+    .section-fields { --section-bg: #fbfdfb; --section-line: #d8eee5; --section-accent: #6fcf97; }
+    .section-formula { --section-bg: #fbf9ff; --section-line: #e8ddfa; --section-accent: #a78bfa; }
+    .section-children { --section-bg: #f8fbfb; --section-line: #d7ecec; --section-accent: #67b7b7; }
+    .metadata-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .metadata-field { min-width: 0; padding: 11px 12px; border: 1px solid #dbe7f3; border-radius: 12px; background: rgba(255,255,255,.78); }
+    .metadata-field .k { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .metadata-field .v { color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.8; overflow-wrap: anywhere; }
+    .metadata-field .badge { margin-top: 1px; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      background: linear-gradient(180deg, #f7faff, #eef4fb 70%);
+      color: var(--text);
+      direction: rtl;
+    }
+    .app { min-height: 100%; display: flex; flex-direction: column; }
+    .topbar {
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 18px;
+      position: sticky; top: 0; z-index: 20;
+    }
+    .topbar-inner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .brand {
+      display: flex; align-items: center; gap: 10px; min-width: 240px;
+      font-weight: 700; font-size: 18px; color: var(--text);
+    }
+    .brand-badge {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      color: white; display: grid; place-items: center; box-shadow: var(--shadow);
+      flex: 0 0 auto;
+    }
+    .controls { display: flex; gap: 10px; flex: 1 1 560px; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
+    .input, .select {
+      border: 1px solid var(--line); background: white; border-radius: 14px;
+      padding: 12px 14px; font: inherit; color: var(--text); outline: none;
+      min-height: 46px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .03);
+    }
+    .input { flex: 1 1 320px; }
+    .select { flex: 0 0 180px; }
+    .btn {
+      border: 1px solid var(--line); background: white; color: var(--text);
+      border-radius: 14px; padding: 12px 14px; min-height: 46px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px; transition: .2s ease;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .03);
+    }
+    .btn:hover { transform: translateY(-1px); border-color: #c6d2e2; }
+    .btn.primary { background: linear-gradient(135deg, var(--primary), #4f46e5); color: white; border-color: transparent; }
+    .btn.ghost { background: #fff; }
+    .wrap { width: min(1500px, calc(100% - 24px)); margin: 14px auto 24px; }
+    .stats {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px;
+    }
+    .stat {
+      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 14px 16px; box-shadow: var(--shadow);
+    }
+    .stat .label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .stat .value { font-size: 24px; font-weight: 800; }
+    .layout { display: grid; grid-template-columns: 1.35fr 1.05fr; gap: 14px; align-items: start; direction: ltr; }
+    .layout > .panel { direction: rtl; }
+    .details-panel { grid-column: 1; }
+    .tree-panel { grid-column: 2; }
+    .panel {
+      background: rgba(255,255,255,.96); border: 1px solid color-mix(in srgb, var(--line) 88%, white); border-radius: 20px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .06); overflow: hidden; min-height: 68vh;
+    }
+    .panel-header {
+      padding: 13px 16px; border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, white); background: linear-gradient(180deg, #fff, #fcfdff);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .panel-title { font-size: 15px; font-weight: 800; letter-spacing: 0; }
+    .panel-sub { color: var(--muted); font-size: 13px; }
+    .panel-body { padding: 14px 16px; }
+    .breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+    .crumb { background: #eff5fb; border: 1px solid #d8e5f5; padding: 6px 10px; border-radius: 999px; }
+    .detail-card {
+      background: linear-gradient(180deg, #ffffff, #fbfdff); border: 1px solid var(--line); border-radius: 18px; padding: 14px;
+      margin-bottom: 14px;
+    }
+    .detail-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+    .detail-code { color: var(--primary); font-weight: 800; font-size: 14px; }
+    .detail-name { font-size: 20px; font-weight: 800; margin-top: 4px; line-height: 1.6; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .b-summary { background: #ecfeff; color: #0f766e; border-color: #a5f3fc; }
+    .b-kpi { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .b-driver { background: #f3e8ff; color: #7c3aed; border-color: #e9d5ff; }
+    .b-data { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .b-other { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .field {
+      padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: #fff;
+    }
+    .field .k { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .field .v { font-size: 14px; line-height: 1.8; word-break: break-word; }
+    .formula {
+      direction: ltr; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 12px; border: 1px solid #1f2937;
+      overflow: auto; white-space: pre-wrap; word-break: break-word;
+    }
+    .muted { color: var(--muted); }
+    .section-title { display:flex; justify-content:space-between; align-items:center; gap:10px; margin: 0 0 10px; }
+    .tree-wrap { max-height: calc(68vh - 72px); overflow: auto; padding: 10px 8px 14px 8px; }
+    .tree {
+      list-style: none; margin: 0; padding: 0;
+      direction: rtl;
+    }
+    .tree ul { list-style: none; margin: 0; padding: 0 0 0 18px; }
+    .node {
+      margin: 4px 0;
+    }
+    /* Depth is encoded on each row so hierarchy remains clear even when branches are expanded. */
+    .tree ul { padding-inline-start: 18px; }
+    .node-row { border-inline-start: 4px solid transparent; }
+    .node-depth-0 { margin-inline-start: 0; }
+    .node-depth-1 { margin-inline-start: 12px; }
+    .node-depth-2 { margin-inline-start: 24px; }
+    .node-depth-3 { margin-inline-start: 36px; }
+    .node-depth-4 { margin-inline-start: 48px; }
+    .node-depth-5 { margin-inline-start: 60px; }
+    .node-depth-6 { margin-inline-start: 72px; }
+    .node-depth-7 { margin-inline-start: 84px; }
+    .node-depth-0 .node-row { border-inline-start-color: #0f766e; background: #f0fdfa; }
+    .node-depth-1 .node-row { border-inline-start-color: #2563eb; background: #f5f9ff; }
+    .node-depth-2 .node-row { border-inline-start-color: #7c3aed; background: #faf7ff; }
+    .node-depth-3 .node-row { border-inline-start-color: #c2410c; background: #fffaf5; }
+    .node-depth-4 .node-row { border-inline-start-color: #be185d; background: #fff7fb; }
+    .node-depth-5 .node-row, .node-depth-6 .node-row, .node-depth-7 .node-row { border-inline-start-color: #475569; background: #f8fafc; }
+    .node-depth-0 .node-name { font-size: 16px; font-weight: 800; }
+    .node-depth-1 .node-name { font-size: 15px; font-weight: 800; }
+    .node-depth-2 .node-name { font-size: 14px; font-weight: 700; }
+    .node-depth-3 .node-name { font-size: 13px; font-weight: 700; }
+    .node-depth-4 .node-name, .node-depth-5 .node-name, .node-depth-6 .node-name, .node-depth-7 .node-name { font-size: 12px; font-weight: 600; }
+    .node-depth-0 .node-code { color: #0f766e; font-size: 13px; }
+    .node-depth-1 .node-code { color: #1d4ed8; font-size: 12px; }
+    .node-depth-2 .node-code { color: #7c3aed; }
+    .node-depth-3 .node-code { color: #c2410c; }
+    .node-depth-4 .node-code, .node-depth-5 .node-code, .node-depth-6 .node-code, .node-depth-7 .node-code { color: #475569; }
+
+    .node-row {
+      display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center;
+      border: 1px solid transparent; border-radius: 14px; padding: 9px 10px; cursor: pointer;
+      transition: .15s ease; background: #fff;
+    }
+    .node-row:hover { border-color: #d6e2f0; background: #f8fbff; }
+    .node-row.selected { border-color: #93c5fd; background: #eff6ff; box-shadow: 0 8px 16px rgba(37,99,235,.08); }
+    .node-row.match { outline: 2px solid rgba(124,58,237,.18); }
+    .twisty {
+      width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+      background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; font-size: 14px;
+      flex: 0 0 auto;
+    }
+    .twisty.has-children { cursor: pointer; }
+    .node-main { min-width: 0; }
+    .node-code { font-size: 12px; color: var(--primary); font-weight: 700; }
+    .node-name { font-size: 14px; line-height: 1.55; font-weight: 700; margin-top: 2px; }
+    .node-meta { display:flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start; }
+    .count-pill { background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+    .status {
+      padding: 14px 16px; border-radius: 16px; border: 1px dashed #cbd5e1; background: #f8fbff; color: var(--muted);
+      text-align: center; line-height: 1.9;
+    }
+    .loading { display:flex; align-items:center; justify-content:center; min-height: 220px; gap: 10px; }
+    .spinner { width: 20px; height: 20px; border: 3px solid #dbeafe; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error {
+      background: #fef2f2; border-color: #fecaca; color: #991b1b;
+    }
+    .toolbar { display:flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .small { font-size: 12px; color: var(--muted); }
+    .hide { display:none !important; }
+    .empty { padding: 22px 14px; }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { min-height: auto; }
+    }
+    @media (max-width: 720px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fields, .metadata-fields { grid-template-columns: 1fr; }
+      .brand { min-width: 0; }
+      .controls { flex: 1 1 100%; }
+      .select { flex: 1 1 180px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand"><div class="brand-badge">K</div><div>داشبورد مدیریتی پیشران</div></div>
+        <div class="controls">
+          <input id="searchInput" class="input" type="search" placeholder="جست‌وجو در کد، نام، فرمول، تارگت و داده‌های موردنیاز..." aria-label="جست‌وجوی سراسری" />
+          <select id="structureFilter" class="select" aria-label="فیلتر ساختار">
+            <option value="all">همه ساختارها</option>
+            <option value="Summary KPI">Summary KPI</option>
+            <option value="KPI">KPI</option>
+            <option value="Driver">Driver</option>
+            <option value="Data">Data</option>
+          </select>
+          <button id="clearSearchBtn" class="btn ghost" title="پاک‌کردن جست‌وجو" aria-label="پاک‌کردن جست‌وجو">⌫</button>
+          <button id="expandAllBtn" class="btn ghost" title="باز کردن همه" aria-label="باز کردن همه">⤢</button>
+          <button id="collapseAllBtn" class="btn ghost" title="بستن همه" aria-label="بستن همه">⤡</button>
+        </div>
+      </div>
+    </header>
+    <main class="wrap">
+      <div class="stats">
+        <div class="stat"><div class="label">تعداد کل رکوردها</div><div class="value" id="statTotal">0</div></div>
+        <div class="stat"><div class="label">نتایج قابل مشاهده</div><div class="value" id="statVisible">0</div></div>
+        <div class="stat"><div class="label">ریشه‌ها</div><div class="value" id="statRoots">0</div></div>
+        <div class="stat"><div class="label">انتخاب فعلی</div><div class="value" id="statSelected">—</div></div>
+      </div>
+
+      <div id="loadingState" class="panel loading"><div class="spinner"></div><div>در حال بارگذاری داده‌ها...</div></div>
+      <div id="errorState" class="panel error hide"><div class="panel-body"><h3 style="margin-top:0">خطا در بارگذاری داده‌ها</h3><div id="errorText" style="line-height:2"></div></div></div>
+
+      <div id="appState" class="layout hide">
+        <section class="panel details-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">جزئیات ردیف انتخاب‌شده</div>
+              <div class="panel-sub">اطلاعات خود ردیف و فرزندان مستقیم</div>
+            </div>
+          </div>
+          <div class="panel-body" id="detailPane">
+            <div class="status empty">یک ردیف را از درخت ساختار انتخاب کنید.</div>
+          </div>
+        </section>
+
+        <section class="panel tree-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">درخت ساختار</div>
+              <div class="panel-sub">مرتب بر اساس code و parentCode</div>
+            </div>
+            <div class="small" id="treeCount"></div>
+          </div>
+          <div class="panel-body">
+            <div class="section-title">
+              <div class="small">برای باز/بسته کردن گره‌ها از فلش‌ها استفاده کنید.</div>
+            </div>
+            <div class="tree-wrap" id="treePane"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+<script>
+(() => {
+  const state = {
+    items: [],
+    itemsByCode: new Map(),
+    childrenByCode: new Map(),
+    parentByCode: new Map(),
+    roots: [],
+    filteredCodes: new Set(),
+    selectedCode: '',
+    expanded: new Set(),
+    search: '',
+    structure: 'all',
+    loadError: '',
+  };
+
+  const el = (id) => document.getElementById(id);
+  const searchInput = el('searchInput');
+  const structureFilter = el('structureFilter');
+  const clearSearchBtn = el('clearSearchBtn');
+  const expandAllBtn = el('expandAllBtn');
+  const collapseAllBtn = el('collapseAllBtn');
+  const treePane = el('treePane');
+  const detailPane = el('detailPane');
+  const loadingState = el('loadingState');
+  const errorState = el('errorState');
+  const errorText = el('errorText');
+  const appState = el('appState');
+
+  const labels = {
+    code: 'کد', name: 'نام KPI', structure: 'ساختار', target: 'تارگت', period: 'دوره زمانی',
+    displayType: 'نوع نمایش', formula: 'فرمول', requiredData: 'لیست داده‌های مورد نیاز',
+    collectionMethod: 'روش جمع‌آوری داده‌ها', tcode: 'Tcode'
+  };
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[ch]));
+  }
+  function normalize(v) { return (v == null ? '' : String(v)).trim(); }
+  function clean(v) { const s = normalize(v); return s || 'ثبت نشده'; }
+  function structureClass(v) {
+    const s = normalize(v);
+    if (s === 'Summary KPI') return 'b-summary';
+    if (s === 'KPI') return 'b-kpi';
+    if (s === 'Driver') return 'b-driver';
+    if (s === 'Data') return 'b-data';
+    return 'b-other';
+  }
+  function parentsOf(code) {
+    const arr = [];
+    let cur = code;
+    while (cur) {
+      arr.unshift(cur);
+      cur = state.parentByCode.get(cur) || '';
+    }
+    return arr;
+  }
+  function descendants(code) {
+    const out = [];
+    const stack = [...(state.childrenByCode.get(code) || [])];
+    while (stack.length) {
+      const c = stack.shift();
+      out.push(c);
+      const kids = state.childrenByCode.get(c) || [];
+      stack.unshift(...kids);
+    }
+    return out;
+  }
+  function matchesSearch(item) {
+    const q = state.search.toLowerCase().trim();
+    if (!q) return true;
+    const hay = [item.code, item.name, item.structure, item.target, item.period, item.goal, item.displayType, item.formula, item.requiredData, item.collectionMethod, item.tcode].map(x => normalize(x).toLowerCase()).join(' ');
+    return hay.includes(q);
+  }
+  function matchesStructure(item) {
+    if (state.structure === 'all') return true;
+    return normalize(item.structure) === state.structure;
+  }
+  function computeVisible() {
+    const visible = new Set();
+    const matchSet = new Set();
+    const byCode = state.itemsByCode;
+
+    for (const item of state.items) {
+      if (matchesStructure(item) && matchesSearch(item)) matchSet.add(item.code);
+    }
+    // keep ancestors of matches visible
+    for (const code of matchSet) {
+      let cur = code;
+      while (cur) { visible.add(cur); cur = state.parentByCode.get(cur) || ''; }
+      for (const d of descendants(code)) visible.add(d);
+    }
+    // When no search, visible should reflect structure filter (with ancestors via tree roots)
+    if (!state.search.trim()) {
+      for (const item of state.items) {
+        if (matchesStructure(item)) visible.add(item.code);
+      }
+      // also include ancestors of visible items so branches render from roots when descendants match filter
+      for (const item of state.items) {
+        if (visible.has(item.code)) {
+          let cur = item.code;
+          while (cur) { visible.add(cur); cur = state.parentByCode.get(cur) || ''; }
+        }
+      }
+    }
+    return {visible, matchSet};
+  }
+
+  function ensureSelection() {
+    if (state.selectedCode && state.itemsByCode.has(state.selectedCode)) return;
+    const first = state.items.find(it => state.filteredCodes.has(it.code)) || state.items[0];
+    state.selectedCode = first ? first.code : '';
+  }
+
+  function renderBreadcrumb() {
+    if (!state.selectedCode) return '<div class="breadcrumb"><span class="muted">مسیر:</span><span class="crumb">انتخابی وجود ندارد</span></div>';
+    const chain = parentsOf(state.selectedCode);
+    return '<div class="breadcrumb"><span class="muted">مسیر:</span>' + chain.map((c, idx) => {
+      const item = state.itemsByCode.get(c);
+      return `<span class="crumb" data-code="${esc(c)}">${idx+1}. ${esc(clean(item?.name || c))}</span>`;
+    }).join('<span class="muted">←</span>') + '</div>';
+  }
+
+  function badgeFor(item) {
+    const cls = structureClass(item.structure);
+    return `<span class="badge ${cls}">${esc(clean(item.structure))}</span>`;
+  }
+
+  function renderDetail() {
+    if (!state.selectedCode || !state.itemsByCode.has(state.selectedCode)) {
+      detailPane.innerHTML = '<div class="status empty">یک ردیف را از درخت ساختار انتخاب کنید.</div>';
+      el('statSelected').textContent = '—';
+      return;
+    }
+    const item = state.itemsByCode.get(state.selectedCode);
+    const kids = state.childrenByCode.get(item.code) || [];
+    const fields = [
+      ['target', item.target], ['period', item.period], ['displayType', item.displayType],
+      ['requiredData', item.requiredData], ['collectionMethod', item.collectionMethod], ['tcode', item.tcode]
+    ];
+    const childrenHtml = kids.length
+      ? `<div class="detail-card detail-section section-children"><div class="section-title"><div class="panel-title" style="font-size:15px; display:flex; align-items:center; gap:0"><span class="section-icon" aria-hidden="true">⌄</span><span>فرزندان مستقیم</span></div><div class="section-meta">${kids.length} مورد</div></div>${kids.map(k => {
+          const child = state.itemsByCode.get(k);
+          return `<div class="field" style="margin-top:8px;cursor:pointer" data-select="${esc(child.code)}"><div class="k">${esc(clean(child.code))}</div><div class="v">${esc(clean(child.name))}</div></div>`;
+        }).join('')}</div>`
+      : '<div class="detail-card detail-section section-children"><div class="muted">این ردیف فرزند مستقیم ندارد.</div></div>';
+
+    const formula = clean(item.formula);
+    const example = item.target
+      ? `اگر مقدار واقعی شاخص در یک دوره ${clean(item.target)} باشد، آن را با فرمول بالا محاسبه و با تارگت مقایسه کنید.`
+      : 'برای نمونه، مقدارهای ورودی را در فرمول بالا قرار دهید و نتیجه را با مقدار هدف دوره مقایسه کنید.';
+
+    detailPane.innerHTML = `
+      ${renderBreadcrumb()}
+      <div class="detail-card detail-section section-overview">
+        <div class="section-title"><div class="panel-title" style="font-size:15px; display:flex; align-items:center; gap:0"><span class="section-icon" aria-hidden="true">▣</span><span>جزئیات تکمیلی</span></div></div>
+        <div class="muted" style="line-height:1.9">مشخصات پایه KPI انتخاب‌شده</div>
+        <div class="metadata-fields">
+          <div class="metadata-field"><div class="k">${esc(labels.code)}</div><div class="v" dir="ltr">${esc(clean(item.code))}</div></div>
+          <div class="metadata-field"><div class="k">${esc(labels.name)}</div><div class="v">${esc(clean(item.name))}</div></div>
+          <div class="metadata-field"><div class="k">${esc(labels.structure)}</div><div class="v">${badgeFor(item)}</div></div>
+        </div>
+      </div>
+      <div class="detail-card detail-section section-fields">
+        <div class="section-title"><div class="panel-title" style="font-size:15px; display:flex; align-items:center; gap:0"><span class="section-icon" aria-hidden="true">≡</span><span>اطلاعات تکمیلی</span></div></div>
+        <div class="fields">${fields.map(([k,v]) => {
+          const val = clean(v);
+          return `<div class="field"><div class="k">${esc(labels[k])}</div><div class="v">${esc(val)}</div></div>`;
+        }).join('')}</div>
+      </div>
+      <div class="detail-card detail-section section-formula"><div class="section-title"><div class="panel-title" style="font-size:15px; display:flex; align-items:center; gap:0"><span class="section-icon" aria-hidden="true">ƒx</span><span>فرمول</span></div></div><div class="formula">${esc(formula)}</div></div>
+      ${childrenHtml}
+    `;
+    el('statSelected').textContent = clean(item.code);
+  }
+
+  function renderNode(code, matchSet, visible, depth = 0) {
+    const item = state.itemsByCode.get(code);
+    if (!item || !visible.has(code)) return '';
+    const children = state.childrenByCode.get(code) || [];
+    const visibleChildren = children.filter(c => visible.has(c));
+    const hasChildren = visibleChildren.length > 0;
+    const expanded = state.expanded.has(code) || state.search.trim();
+    const isSelected = state.selectedCode === code;
+    const isMatch = matchSet.has(code);
+    const twisty = hasChildren ? `<span class="twisty has-children" data-toggle="${esc(code)}">${expanded ? '▾' : '▸'}</span>` : `<span class="twisty">•</span>`;
+    const meta = `<span class="count-pill">${esc(clean(item.structure))}</span><span class="count-pill">${visibleChildren.length} فرزند</span>`;
+    const depthClass = `node-depth-${Math.min(depth, 7)}`;
+    const html = [`<li class="node ${depthClass}" data-depth="${depth}">`,
+      `<div class="node-row ${isSelected ? 'selected' : ''} ${isMatch ? 'match' : ''}" data-select="${esc(code)}" data-depth="${depth}">`,
+      twisty,
+      `<div class="node-main"><div class="node-code">${esc(clean(item.code))}</div><div class="node-name">${esc(clean(item.name))}</div></div>`,
+      `<div class="node-meta">${meta}</div>`,
+      `</div>`
+    ];
+    if (hasChildren && expanded) {
+      html.push('<ul>');
+      for (const ch of visibleChildren) html.push(renderNode(ch, matchSet, visible, depth + 1));
+      html.push('</ul>');
+    }
+    html.push('</li>');
+    return html.join('');
+  }
+
+  function renderTree() {
+    const {visible, matchSet} = computeVisible();
+    state.filteredCodes = visible;
+    const rootCodes = state.roots.filter(c => visible.has(c));
+    el('statTotal').textContent = String(state.items.length);
+    el('statVisible').textContent = String(visible.size);
+    el('statRoots').textContent = String(rootCodes.length);
+    el('treeCount').textContent = `${rootCodes.length} ریشه / ${visible.size} قابل نمایش`;
+
+    if (!rootCodes.length) {
+      treePane.innerHTML = '<div class="status empty">نتیجه‌ای پیدا نشد.</div>';
+      detailPane.innerHTML = '<div class="status empty">برای مشاهده جزئیات، جست‌وجو یا فیلتر را تغییر دهید.</div>';
+      el('statSelected').textContent = '—';
+      return;
+    }
+
+    treePane.innerHTML = `<ul class="tree">${rootCodes.map(c => renderNode(c, matchSet, visible)).join('')}</ul>`;
+    renderDetail();
+  }
+
+  function setExpandedAll(val) {
+    state.expanded.clear();
+    if (val) {
+      for (const item of state.items) {
+        if ((state.childrenByCode.get(item.code) || []).length) state.expanded.add(item.code);
+      }
+    }
+    renderTree();
+  }
+
+  function showError(msg) {
+    loadingState.classList.add('hide');
+    appState.classList.add('hide');
+    errorState.classList.remove('hide');
+    errorText.innerHTML = msg;
+  }
+
+  function friendlyError(err) {
+    const m = String(err && err.message ? err.message : err);
+    return `
+      <p>بارگذاری مستقیم فایل <b>drivers.json</b> ناموفق بود.</p>
+      <p>اگر صفحه را با <b>file://</b> باز کرده‌اید، مرورگر ممکن است fetch را مسدود کند. لطفاً صفحه را با یک سرور محلی اجرا کنید.</p>
+      <p>جزئیات: <code>${esc(m)}</code></p>
+    `;
+  }
+
+  function applyFilters() {
+    state.search = searchInput.value || '';
+    state.structure = structureFilter.value;
+    renderTree();
+  }
+
+  function loadData() {
+    fetch('./drivers.json', {cache: 'no-store'})
+      .then(async res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        const rawItems = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+        if (!rawItems.length) throw new Error('drivers.json فاقد آرایه items است یا رکوردی ندارد');
+        // Normalize the exported driver schema once so every view uses the same fields.
+        const items = rawItems.map(raw => ({
+          code: normalize(raw.code),
+          name: raw.name,
+          structure: raw.structure,
+          target: raw.target,
+          period: raw.period,
+          goal: raw.goal ?? raw.objective ?? raw.purpose,
+          displayType: raw.displayType,
+          formula: raw.formula,
+          requiredData: raw.requiredData,
+          collectionMethod: raw.collectionMethod,
+          tcode: raw.tcode,
+          parentCode: normalize(raw.parentCode),
+          level: raw.level
+        }));
+        state.items = items;
+        state.itemsByCode = new Map(items.map(it => [normalize(it.code), it]));
+        state.childrenByCode = new Map();
+        state.parentByCode = new Map();
+        for (const it of items) {
+          const code = normalize(it.code);
+          const parent = normalize(it.parentCode);
+          if (!state.childrenByCode.has(parent)) state.childrenByCode.set(parent, []);
+          state.childrenByCode.get(parent).push(code);
+          state.parentByCode.set(code, parent);
+        }
+        state.roots = items.filter(it => !normalize(it.parentCode)).map(it => normalize(it.code));
+        // sort roots and children by order in file using existing order arrays
+        const orderIndex = new Map(items.map((it, idx) => [normalize(it.code), idx]));
+        state.roots.sort((a,b) => orderIndex.get(a) - orderIndex.get(b));
+        for (const [k, arr] of state.childrenByCode.entries()) arr.sort((a,b) => orderIndex.get(a) - orderIndex.get(b));
+        state.selectedCode = state.roots[0] || (items[0] ? normalize(items[0].code) : '');
+        loadingState.classList.add('hide');
+        errorState.classList.add('hide');
+        appState.classList.remove('hide');
+        setExpandedAll(false);
+        ensureSelection();
+        renderTree();
+      })
+      .catch(err => showError(friendlyError(err)));
+  }
+
+  treePane.addEventListener('click', (ev) => {
+    const toggle = ev.target.closest('[data-toggle]');
+    if (toggle) {
+      const code = toggle.getAttribute('data-toggle');
+      if (state.expanded.has(code)) state.expanded.delete(code); else state.expanded.add(code);
+      renderTree();
+      ev.stopPropagation();
+      return;
+    }
+    const select = ev.target.closest('[data-select]');
+    if (select) {
+      const code = select.getAttribute('data-select');
+      state.selectedCode = code;
+      // ensure ancestors expanded to keep path visible
+      let cur = state.parentByCode.get(code) || '';
+      while (cur) { state.expanded.add(cur); cur = state.parentByCode.get(cur) || ''; }
+      renderTree();
+    }
+  });
+  detailPane.addEventListener('click', (ev) => {
+    const card = ev.target.closest('[data-select]');
+    if (card) {
+      state.selectedCode = card.getAttribute('data-select');
+      let cur = state.parentByCode.get(state.selectedCode) || '';
+      while (cur) { state.expanded.add(cur); cur = state.parentByCode.get(cur) || ''; }
+      renderTree();
+    }
+    const crumb = ev.target.closest('[data-code]');
+    if (crumb) {
+      state.selectedCode = crumb.getAttribute('data-code');
+      renderTree();
+    }
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+  structureFilter.addEventListener('change', applyFilters);
+  clearSearchBtn.addEventListener('click', () => { searchInput.value = ''; applyFilters(); searchInput.focus(); });
+  expandAllBtn.addEventListener('click', () => setExpandedAll(true));
+  collapseAllBtn.addEventListener('click', () => setExpandedAll(false));
+
+  loadData();
+})();
+</script>
+</body>
+</html>
